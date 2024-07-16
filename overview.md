@@ -253,8 +253,6 @@
    ```
    **Explanation:** `constexpr` virtual functions are now supported, enabling compile-time polymorphism. This example demonstrates `constexpr` virtual functions in a base and derived class.
 
-Sure, continuing with the remaining examples:
-
 3. **Expanded constexpr Algorithms**
    ```cpp
    #include <algorithm>
