@@ -205,6 +205,7 @@ int main() {
     // print_if_integral(3.14); // Compile-time error
 }
 ```
+is-concept-a-variant-of-sfinae: https://stackoverflow.com/questions/74514843/is-concept-a-variant-of-sfinae
 
 ### 5.2 Using Concepts Instead of SFINAE
 
