@@ -219,6 +219,8 @@ int main() {
 
 This example demonstrates how concepts can be used for overload resolution, allowing for more efficient implementations when stronger guarantees are available.
 
+Another example: https://bbgb.dev.bloomberg.com/z/26fdb4
+
 ## Better error messages
 
 https://bbgb.dev.bloomberg.com/z/fe7d72
