@@ -278,6 +278,13 @@ str < "world";      // true
 "world" > str;      // true (reversed and rewritten)
 ```
 
+## Compatibility issues
+### [Infinite recursion with ==](https://stackoverflow.com/questions/65648897/c20-behaviour-breaking-existing-code-with-equality-operator)
+- <img width="628" alt="Screenshot 2024-07-22 at 12 11 04" src="https://github.com/user-attachments/assets/26f277b8-99b3-4261-92fb-b69a8e50e668">
+- <img width="625" alt="Screenshot 2024-07-22 at 12 11 20" src="https://github.com/user-attachments/assets/06e9cdf7-04d8-4c92-af1b-9b76d4bac9e4">
+### Defaulted == needs == in base class
+- <img width="620" alt="Screenshot 2024-07-22 at 12 11 34" src="https://github.com/user-attachments/assets/2447f55e-f3aa-4978-af22-8bd7fb4febeb">
+
 ## Conclusion
 
 - C++20 brings significant improvements to comparison operations
