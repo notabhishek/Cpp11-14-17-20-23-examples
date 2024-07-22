@@ -1,329 +1,293 @@
-# C++20 Comparisons and Operator <=>: A Comprehensive Guide
+# Comparisons in C++20: A Comprehensive Overview
 
-## 1. Introduction to the Spaceship Operator
+## Introduction
 
-The spaceship operator `<=>` is a new feature in C++20 that simplifies the implementation of comparison operators. It provides a way to define all six comparison operators (`<`, `<=`, `>`, `>=`, `==`, `!=`) with a single function.
+- C++20 introduces significant changes to comparison operations
+- New operator: `<=>` (three-way comparison or "spaceship" operator)
+- Fundamental shift in comparison semantics
+- Aim: Reduce boilerplate code and potential for errors
 
-### 1.1 Basic Syntax and Usage
+## Comparisons in C++17 and Earlier
 
-The spaceship operator is declared as follows:
+### Pre-C++20 Rules:
+
+- Six comparison operators: `==`, `!=`, `<`, `>`, `<=`, `>=`
+- All operators treated equally by the language
+- Relied on idioms to simplify implementation (e.g., `!=` defined in terms of `==`)
+- Typically implemented `==` and `<` as primitives
+
+### Problems with Pre-C++20 Approach:
+
+1. Verbose implementation:
 
 ```cpp
-#include <compare>
-
-class MyClass {
-public:
-    std::strong_ordering operator<=>(const MyClass&) const = default;
+struct Point {
+    int x, y;
+    
+    bool operator==(const Point& rhs) const {
+        return x == rhs.x && y == rhs.y;
+    }
+    bool operator!=(const Point& rhs) const {
+        return !(*this == rhs);
+    }
+    bool operator<(const Point& rhs) const {
+        return x < rhs.x || (x == rhs.x && y < rhs.y);
+    }
+    bool operator>(const Point& rhs) const {
+        return rhs < *this;
+    }
+    bool operator<=(const Point& rhs) const {
+        return !(rhs < *this);
+    }
+    bool operator>=(const Point& rhs) const {
+        return !(*this < rhs);
+    }
 };
 ```
 
-This simple declaration generates all six comparison operators.
+2. Error-prone for complex types
+3. Difficulty in supporting heterogeneous comparisons
+4. `<` as a primitive is problematic for partial orders (e.g., floating-point comparisons)
+
+## Key Concept: Primary and Secondary Operators
+
+| Category   | Equality | Ordering |
+|------------|----------|----------|
+| Primary    | `==`     | `<=>`    |
+| Secondary  | `!=`     | `<, >, <=, >=` |
+
+- Primary operators can be reversed
+- Secondary operators can be rewritten in terms of primary operators
+
+## The Spaceship Operator: `<=>`
+
+### Comparison Categories
+
+1. `strong_ordering`: 
+   - Total ordering with substitutability
+   - Values: `strong_ordering::greater`, `strong_ordering::equal`, `strong_ordering::less`
+
+2. `weak_ordering`:
+   - Total ordering with equivalence classes
+   - Values: `weak_ordering::greater`, `weak_ordering::equivalent`, `weak_ordering::less`
+
+3. `partial_ordering`:
+   - Partial ordering
+   - Values: `partial_ordering::greater`, `partial_ordering::equivalent`, `partial_ordering::less`, `partial_ordering::unordered`
+
+### Example: Implementing Partial Ordering
+
+```cpp
+struct IntNan {
+    std::optional<int> val = std::nullopt;
+
+    bool operator==(IntNan const& rhs) const {
+        if (!val || !rhs.val) {
+            return false;
+        }
+        return *val == *rhs.val;
+    }
+
+    std::partial_ordering operator<=>(IntNan const& rhs) const {
+        if (!val || !rhs.val) {
+            return std::partial_ordering::unordered;
+        }
+        return *val <=> *rhs.val;
+    }
+};
+
+IntNan{2} <=> IntNan{4};  // partial_ordering::less
+IntNan{2} <=> IntNan{};   // partial_ordering::unordered
+IntNan{2} < IntNan{4};    // true
+IntNan{2} < IntNan{};     // false
+IntNan{2} == IntNan{};    // false
+IntNan{2} <= IntNan{};    // false
+```
+
+## New Operator Abilities
+
+### 1. Reversing Primary Operators
+
+```cpp
+struct A {
+    int i;
+    explicit A(int i) : i(i) { }
+
+    bool operator==(int j) const {
+        return i == j;
+    }
+
+    std::strong_ordering operator<=>(int j) const {
+        return i <=> j;
+    }
+};
+
+A a(10);
+a == 10;    // OK: a.operator==(10)
+10 == a;    // OK in C++20: a.operator==(10)
+a <=> 10;   // OK: a.operator<=>(10)
+10 <=> a;   // OK in C++20: 0 <=> a.operator<=>(10)
+```
+
+- No new functions generated
+- Only primary operators are reversible
+
+### 2. Rewriting Secondary Operators
+
+```cpp
+A a(10);
+a != 17;    // Rewrites to !(a == 17)
+a < 9;      // Rewrites to (a <=> 9) < 0
+17 != a;    // Rewrites to !a.operator==(17)
+9 <= a;     // Rewrites to 0 <= a.operator<=>(9)
+```
+
+## Specific Lookup Rules
+
+1. Find all `operator@`s
+2. Find all `operator@@`s (primary operator of @)
+3. Consider reversed `operator@@`s
+4. Perform single overload resolution run
+5. Pick the best viable candidate
+
+### Example: Ambiguity Resolution
+
+```cpp
+struct C {
+    bool operator==(C const&) const;
+    bool operator!=(C const&) const;
+};
+
+bool check(C x, C y) {
+    return x != y;
+}
+```
+
+In C++20, `x != y` has three candidates:
+1. `x.operator!=(y)`
+2. `!x.operator==(y)`
+3. `!y.operator==(x)`
+
+Tiebreaker rules:
+1. Non-reversed candidates win over reversed ones
+2. Non-rewritten candidates win over rewritten ones
+
+Result: `x.operator!=(y)` is chosen
+
+## Summary of Rules
+
+| Source | Alt 1 | Alt 2 |
+|--------|-------|-------|
+| `a == b` | `b == a` | |
+| `a != b` | `!(a == b)` | `!(b == a)` |
+| `a <=> b` | `0 <=> (b <=> a)` | |
+| `a < b` | `(a <=> b) < 0` | `(b <=> a) > 0` |
+| `a <= b` | `(a <=> b) <= 0` | `(b <=> a) >= 0` |
+| `a > b` | `(a <=> b) > 0` | `(b <=> a) < 0` |
+| `a >= b` | `(a <=> b) >= 0` | `(b <=> a) <= 0` |
+
+## Guideline: PRIMARY-ONLY
+
+Define only the primary operators (`==` and `<=>`) for your type.
+
+Benefits:
+- Fewer operators to implement (2 instead of 6 for homogeneous, 2 instead of 12 for each heterogeneous)
+- Full complement of comparisons
+- Can be member functions
 
 Example:
 
 ```cpp
-#include <compare>
-#include <iostream>
-
-class Point {
+struct Point {
     int x, y;
-public:
-    Point(int x, int y) : x(x), y(y) {}
+
+    bool operator==(const Point&) const = default;
     auto operator<=>(const Point&) const = default;
 };
 
-int main() {
-    Point p1(1, 2);
-    Point p2(3, 4);
-    
-    std::cout << std::boolalpha;
-    std::cout << "p1 < p2: " << (p1 < p2) << '\n';
-    std::cout << "p1 == p2: " << (p1 == p2) << '\n';
-    std::cout << "p1 > p2: " << (p1 > p2) << '\n';
-}
+// All comparison operators now work:
+Point p1{1, 2}, p2{3, 4};
+p1 == p2;  // false
+p1 != p2;  // true
+p1 < p2;   // true
+p1 <= p2;  // true
+p1 > p2;   // false
+p1 >= p2;  // false
 ```
 
-## 2. Ordering Types
+## Defaulting Comparisons
 
-The spaceship operator can return three different ordering types, each representing a different level of ordering semantics.
-
-### 2.1 std::strong_ordering
-
-Represents a total order, where every pair of values can be ordered and equality implies substitutability.
-
-Example:
+### C++20 Approach:
 
 ```cpp
-#include <compare>
-#include <iostream>
+struct A {
+    T t;
+    U u;
+    V v;
 
-class Integer {
-    int value;
-public:
-    Integer(int v) : value(v) {}
-    std::strong_ordering operator<=>(const Integer& other) const {
-        return value <=> other.value;
-    }
+    auto operator<=>(const A&) const = default;
 };
-
-int main() {
-    Integer a(5), b(10);
-    std::cout << std::boolalpha;
-    std::cout << "a < b: " << (a < b) << '\n';
-    std::cout << "a == b: " << (a == b) << '\n';
-}
 ```
 
-### 2.2 std::weak_ordering
+- Generates both `==` and `<=>` with member-wise lexicographical comparison
+- Simplifies implementation
+- Reduces potential for errors
 
-Allows equivalent but not necessarily equal values.
-
-Example:
-
-```cpp
-#include <compare>
-#include <iostream>
-#include <string>
-#include <algorithm>
-
-class CaseInsensitiveString {
-    std::string str;
-public:
-    CaseInsensitiveString(const std::string& s) : str(s) {}
-    std::weak_ordering operator<=>(const CaseInsensitiveString& other) const {
-        return std::lexicographical_compare_three_way(
-            str.begin(), str.end(),
-            other.str.begin(), other.str.end(),
-            [](char a, char b) {
-                return std::tolower(a) <=> std::tolower(b);
-            }
-        );
-    }
-    bool operator==(const CaseInsensitiveString& other) const {
-        return std::equal(str.begin(), str.end(),
-                          other.str.begin(), other.str.end(),
-                          [](char a, char b) {
-                              return std::tolower(a) == std::tolower(b);
-                          });
-    }
-};
-
-int main() {
-    CaseInsensitiveString s1("Hello");
-    CaseInsensitiveString s2("hello");
-    std::cout << std::boolalpha;
-    std::cout << "s1 == s2: " << (s1 == s2) << '\n';
-    std::cout << "s1 < s2: " << (s1 < s2) << '\n';
-}
-```
-
-### 2.3 std::partial_ordering
-
-Allows for incomparable values.
-
-Example:
+### Example: Complex Number Comparison
 
 ```cpp
-#include <compare>
-#include <iostream>
-#include <cmath>
+struct Complex {
+    double real, imag;
 
-class FloatingPoint {
-    double value;
-public:
-    FloatingPoint(double v) : value(v) {}
-    std::partial_ordering operator<=>(const FloatingPoint& other) const {
-        if (std::isnan(value) || std::isnan(other.value))
-            return std::partial_ordering::unordered;
-        return value <=> other.value;
-    }
-};
-
-int main() {
-    FloatingPoint a(5.0), b(10.0), c(std::nan(""));
-    std::cout << std::boolalpha;
-    std::cout << "a < b: " << (a < b) << '\n';
-    std::cout << "a < c: " << (a < c) << '\n';
-    std::cout << "c < c: " << (c < c) << '\n';
-}
-```
-
-## 3. Custom Implementations
-
-While the default implementation works for many cases, sometimes you need to provide a custom implementation.
-
-Example:
-
-```cpp
-#include <compare>
-#include <iostream>
-#include <string>
-
-class Person {
-    std::string name;
-    int age;
-public:
-    Person(const std::string& n, int a) : name(n), age(a) {}
-    
-    std::strong_ordering operator<=>(const Person& other) const {
-        if (auto cmp = name <=> other.name; cmp != 0)
+    auto operator<=>(const Complex& rhs) const {
+        if (auto cmp = real <=> rhs.real; cmp != 0) {
             return cmp;
-        return age <=> other.age;
-    }
-    
-    bool operator==(const Person& other) const {
-        return (name == other.name) && (age == other.age);
-    }
-};
-
-int main() {
-    Person p1("Alice", 30);
-    Person p2("Bob", 25);
-    Person p3("Alice", 35);
-    
-    std::cout << std::boolalpha;
-    std::cout << "p1 < p2: " << (p1 < p2) << '\n';
-    std::cout << "p1 < p3: " << (p1 < p3) << '\n';
-    std::cout << "p1 == p3: " << (p1 == p3) << '\n';
-}
-```
-
-## 4. Rewriting Rules
-
-The compiler rewrites comparison expressions to use `<=>`:
-
-```cpp
-a < b  // Rewritten as: (a <=> b) < 0
-a > b  // Rewritten as: (a <=> b) > 0
-a == b // Rewritten as: (a <=> b) == 0
-```
-
-Example demonstrating rewriting:
-
-```cpp
-#include <compare>
-#include <iostream>
-
-class Rewriter {
-    int value;
-public:
-    Rewriter(int v) : value(v) {}
-    std::strong_ordering operator<=>(const Rewriter& other) const {
-        std::cout << "operator<=> called\n";
-        return value <=> other.value;
-    }
-};
-
-int main() {
-    Rewriter a(5), b(10);
-    std::cout << std::boolalpha;
-    std::cout << "a < b: " << (a < b) << '\n';
-    std::cout << "a > b: " << (a > b) << '\n';
-    std::cout << "a == b: " << (a == b) << '\n';
-}
-```
-
-## 5. Performance Considerations
-
-While `<=>` simplifies code, it's important to consider performance implications:
-
-1. For simple types, `<=>` can be as efficient as traditional comparisons.
-2. For complex types, it may introduce slight overhead due to the three-way comparison.
-3. Custom implementations may be necessary for optimal performance in specific cases.
-
-Example demonstrating a performance-oriented implementation:
-
-```cpp
-#include <compare>
-#include <iostream>
-#include <vector>
-#include <chrono>
-
-class OptimizedComparable {
-    std::vector<int> data;
-public:
-    OptimizedComparable(std::initializer_list<int> il) : data(il) {}
-    
-    std::strong_ordering operator<=>(const OptimizedComparable& other) const {
-        if (data.size() != other.data.size())
-            return data.size() <=> other.data.size();
-        for (size_t i = 0; i < data.size(); ++i) {
-            if (auto cmp = data[i] <=> other.data[i]; cmp != 0)
-                return cmp;
         }
-        return std::strong_ordering::equal;
+        return imag <=> rhs.imag;
     }
-    
-    bool operator==(const OptimizedComparable& other) const {
-        return data == other.data; // Potentially faster than using <=>
-    }
+
+    bool operator==(const Complex& rhs) const = default;
 };
 
-int main() {
-    OptimizedComparable a{1, 2, 3, 4, 5};
-    OptimizedComparable b{1, 2, 3, 4, 6};
-    
-    auto start = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < 1000000; ++i) {
-        (void)(a < b);
-        (void)(a == b);
-    }
-    auto end = std::chrono::high_resolution_clock::now();
-    
-    std::cout << "Time taken: " 
-              << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() 
-              << " microseconds\n";
-}
+Complex c1{1.0, 2.0}, c2{1.0, 3.0};
+c1 < c2;   // true
+c1 == c2;  // false
 ```
 
-## 6. Best Practices and Pitfalls
+## Heterogeneous Comparisons
 
-1. Use `<=>` for most comparison needs, but be prepared to provide custom implementations when necessary.
-2. Be cautious with floating-point comparisons due to precision issues.
-3. Consider providing a custom `==` operator for types where equality can be checked more efficiently than full comparison.
-4. Ensure that custom implementations adhere to the strict weak ordering principle for consistent behavior with standard library algorithms.
-
-Example demonstrating best practices:
+C++20 makes it easier to support heterogeneous comparisons:
 
 ```cpp
-#include <compare>
-#include <iostream>
-#include <cmath>
+struct String {
+    std::string s;
 
-class SafeFloat {
-    double value;
-public:
-    SafeFloat(double v) : value(v) {}
-    
-    std::partial_ordering operator<=>(const SafeFloat& other) const {
-        if (std::isnan(value) || std::isnan(other.value))
-            return std::partial_ordering::unordered;
-        
-        constexpr double epsilon = 1e-9;
-        if (std::abs(value - other.value) < epsilon)
-            return std::partial_ordering::equivalent;
-        
-        return value <=> other.value;
+    bool operator==(const char* rhs) const {
+        return s == rhs;
     }
-    
-    bool operator==(const SafeFloat& other) const {
-        if (std::isnan(value) || std::isnan(other.value))
-            return false;
-        
-        constexpr double epsilon = 1e-9;
-        return std::abs(value - other.value) < epsilon;
+
+    std::strong_ordering operator<=>(const char* rhs) const {
+        return s <=> rhs;
     }
 };
 
-int main() {
-    SafeFloat a(1.0), b(1.0 + 1e-10), c(2.0), d(std::nan(""));
-    
-    std::cout << std::boolalpha;
-    std::cout << "a == b: " << (a == b) << '\n';
-    std::cout << "a < c: " << (a < c) << '\n';
-    std::cout << "a < d: " << (a < d) << '\n';
-    std::cout << "d == d: " << (d == d) << '\n';
-}
+String str{"hello"};
+str == "hello";     // true
+str < "world";      // true
+"hello" == str;     // true (reversed)
+"world" > str;      // true (reversed and rewritten)
 ```
 
-This comprehensive guide covers the key aspects of the spaceship operator and comparison in C++20, including syntax, ordering types, custom implementations, rewriting rules, performance considerations, and best practices. The examples provided demonstrate practical usage and potential pitfalls to watch out for when using this new feature.
+## Conclusion
+
+- C++20 brings significant improvements to comparison operations
+- New `<=>` operator simplifies ordering comparisons
+- Reversible primary operators and rewritable secondary operators reduce boilerplate
+- Defaulted comparisons further simplify common cases
+- Support for heterogeneous comparisons is greatly improved
+- Overall, more intuitive and less error-prone comparison logic
+
+
+## Further reading
+- https://en.cppreference.com/w/cpp/language/default_comparisons
+- https://brevzin.github.io/c++/2019/07/28/comparisons-cpp20/
