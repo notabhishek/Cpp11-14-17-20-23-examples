@@ -301,42 +301,6 @@ int main() {
 1. Use concepts to document assumptions about template parameters.
 2. Prefer simple, composable concepts over complex, monolithic ones.
 3. Be aware that concepts only check syntactic requirements, not semantic ones.
-4. Use `static_assert` with concepts for more expressive compile-time checks.
-
-```cpp
-#include <concepts>
-#include <iostream>
-
-template<typename T>
-concept Incrementable = requires(T x) {
-    { ++x } -> std::same_as<T&>;
-    { x++ } -> std::same_as<T>;
-};
-
-template<Incrementable T>
-void increment(T& value) {
-    ++value;
-}
-
-template<typename T>
-void potentially_unsafe_increment(T& value) {
-    static_assert(Incrementable<T>, "T must be incrementable");
-    ++value;
-}
-
-int main() {
-    int x = 5;
-    increment(x);
-    std::cout << "After increment: " << x << '\n';
-
-    potentially_unsafe_increment(x);
-    std::cout << "After potentially unsafe increment: " << x << '\n';
-
-    // std::string s = "Hello";
-    // increment(s); // Compile-time error
-    // potentially_unsafe_increment(s); // Compile-time error with static_assert message
-}
-```
 
 ## Further reading 
 - https://en.cppreference.com/w/cpp/language/constraints
