@@ -290,4 +290,5 @@ str < "world";      // true
 
 ## Further reading
 - https://en.cppreference.com/w/cpp/language/default_comparisons
+- https://github.com/notabhishek/cpp20/blob/main/C%2B%2B20_cpponsea_240630.pdf
 - https://brevzin.github.io/c++/2019/07/28/comparisons-cpp20/
