@@ -219,6 +219,38 @@ int main() {
 
 This example demonstrates how concepts can be used for overload resolution, allowing for more efficient implementations when stronger guarantees are available.
 
+## Better error messages
+
+https://bbgb.dev.bloomberg.com/z/fe7d72
+
+```cpp
+#include <compare>
+#include <vector>
+#include <string>
+#include <set>
+
+// template<std::ranges::range CollT, typename T> 
+// void add(CollT& coll, const T& val) 
+// requires std::convertible_to<T, std::ranges::range_value_t<CollT>> {
+void add(auto& coll, const auto& val) {
+    if constexpr(requires {coll.push_back(val); }) {
+        coll.push_back(val);
+    }
+    else {
+        coll.insert(val);
+    }
+}
+
+int main() {
+    std::vector<int> a;
+    std::set<std::string> b;
+    
+    add(a, 43);
+    add(b, 43);
+    return 0;
+}
+```
+
 ## Performance Considerations
 
 Concepts are evaluated at compile-time and do not incur runtime overhead. However, complex concepts may increase compilation time.
