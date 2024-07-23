@@ -189,6 +189,8 @@ While ranges can often lead to more efficient code due to lazy evaluation, it's 
 #include <vector>
 #include <iostream>
 #include <chrono>
+#include <algorithm>
+#include <numeric>
 
 int main() {
     std::vector<int> vec(1'000'000);
@@ -197,16 +199,19 @@ int main() {
     auto start = std::chrono::high_resolution_clock::now();
     
     // Using ranges
+    auto view = vec | std::views::filter([](int n) { return n % 2 == 0; })
+             | std::views::transform([](int n) { return n * n; });
+
     auto sum_ranges = std::accumulate(
-        vec | std::views::filter([](int n) { return n % 2 == 0; })
-             | std::views::transform([](int n) { return n * n; }),
+        view.begin(),
+        view.end(),
         0
     );
     
     auto end = std::chrono::high_resolution_clock::now();
     std::cout << "Ranges time: " 
-              << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() 
-              << "ms\n";
+              << std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() 
+              << "ns\n";
     
     start = std::chrono::high_resolution_clock::now();
     
@@ -220,8 +225,8 @@ int main() {
     
     end = std::chrono::high_resolution_clock::now();
     std::cout << "Traditional time: " 
-              << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() 
-              << "ms\n";
+              << std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() 
+              << "ns\n";
     
     std::cout << "Sum (ranges): " << sum_ranges << '\n';
     std::cout << "Sum (traditional): " << sum_traditional << '\n';
