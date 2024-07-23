@@ -61,6 +61,7 @@ int main() {
 #include <vector>
 #include <list>
 #include <algorithm>
+#include <numeric>
 
 int main() {
     auto print_container = []<typename Container>(const Container& c) {
