@@ -256,44 +256,6 @@ int main() {
 }
 ```
 
-3. **Delayed initialization of lambda objects:**
-
-```cpp
-#include <iostream>
-#include <functional>
-
-class DelayedProcessor {
-private:
-    std::function<int(int)> processor;
-
-public:
-    void set_processor(const std::function<int(int)>& new_processor) {
-        processor = new_processor;
-    }
-
-    int process(int value) {
-        if (processor) {
-            return processor(value);
-        }
-        return value;  // Default behavior if no processor is set
-    }
-};
-
-int main() {
-    DelayedProcessor dp;
-
-    std::cout << "Default processing: " << dp.process(5) << "\n";
-
-    dp.set_processor([](int x) { return x * x; });
-    std::cout << "Square processing: " << dp.process(5) << "\n";
-
-    dp.set_processor([](int x) { return x + 10; });
-    std::cout << "Add 10 processing: " << dp.process(5) << "\n";
-
-    return 0;
-}
-```
-
 ### 4. Ability to Capture `[=, this]`
 
 C++20 allows explicitly capturing `this` along with a copy capture default. This feature provides more control over how class members are captured in lambdas defined within member functions.
