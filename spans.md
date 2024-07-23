@@ -267,3 +267,10 @@ int main() {
     printSpan(arr);
 }
 ```
+
+
+## 9. C++23 introduces mdspan
+<img width="626" alt="Screenshot 2024-07-23 at 14 36 06" src="https://github.com/user-attachments/assets/8c8691aa-0355-46bc-a00c-f1f198444a65">
+
+
+
