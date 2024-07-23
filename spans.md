@@ -267,5 +267,3 @@ int main() {
     printSpan(arr);
 }
 ```
-
-This comprehensive guide covers the key aspects of Spans in C++20, including basic usage, dynamic and fixed extents, span operations, usage with algorithms, multidimensional arrays, performance considerations, and best practices. The examples provided demonstrate practical usage and potential pitfalls to watch out for when using this new feature.
