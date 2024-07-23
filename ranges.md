@@ -223,6 +223,8 @@ int main() {
 2. Be cautious of creating infinite ranges without proper termination conditions.
 3. Remember that views are lazy; they don't perform any work until iterated.
 4. Use `std::views::common` when interfacing with legacy code expecting begin/end pairs.
+5. Be aware that some views may change the category of a range (e.g., from random-access to bidirectional).
+
 
 ```cpp
 #include <ranges>
