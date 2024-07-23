@@ -270,22 +270,6 @@
    ```
    **Explanation:** More standard algorithms are now `constexpr`, allowing their use in compile-time computations. This example shows how `std::all_of` can be used in a `constexpr` context to check if all elements in an array are even.
 
-4. **Enhanced Memory Management**
-   ```cpp
-   #include <memory>
-   #include <iostream>
-
-   int main() {
-       auto ptr = std::make_shared<int>(10);
-       std::cout << *ptr << std::endl; // Outputs: 10
-
-       std::unique_ptr<int[]> arr = std::make_unique<int[]>(5);
-       arr[0] = 1;
-       std::cout << arr[0] << std::endl; // Outputs: 1
-   }
-   ```
-   **Explanation:** Improved memory management facilities provide safer and more efficient handling of dynamic memory. This example shows the use of `std::make_shared` for creating a shared pointer and `std::make_unique` for a unique pointer managing an array.
-
 ### Deprecations and Removals
 
 1. **Deprecated Features**
