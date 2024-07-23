@@ -523,8 +523,11 @@ Key points about constexpr lambdas:
 #include <array>
 
 constexpr auto factorial = [](int n) {
-    if (n <= 1) return 1;
-    return n * factorial(n - 1);
+  auto factorial_impl=[](int n, auto& factorial_ref) {
+    if(n <= 1) { return 1; }
+    return n * factorial_ref(n-1, factorial_ref);
+  };
+  return factorial_impl(n,factorial_impl);
 };
 
 int main() {
