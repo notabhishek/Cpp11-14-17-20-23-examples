@@ -16,6 +16,7 @@ C++20 introduces several range concepts:
 - `std::ranges::bidirectional_range`: Can be traversed in both directions
 - `std::ranges::random_access_range`: Elements can be accessed in constant time
 - `std::ranges::contiguous_range`: Elements are stored contiguously in memory
+- <img width="635" alt="Screenshot 2024-07-23 at 14 25 40" src="https://github.com/user-attachments/assets/67dc7a10-d417-4909-a0e3-210f228a313b">
 
 ```cpp
 #include <ranges>
