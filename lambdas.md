@@ -89,33 +89,6 @@ int main() {
 }
 ```
 
-3. **SFINAE with lambdas:**
-
-```cpp
-#include <iostream>
-#include <type_traits>
-
-int main() {
-    auto has_size_method = []<typename T>(T* obj) -> bool {
-        if constexpr (requires { obj->size(); }) {
-            std::cout << "Object has size() method. Size: " << obj->size() << std::endl;
-            return true;
-        } else {
-            std::cout << "Object does not have size() method." << std::endl;
-            return false;
-        }
-    };
-
-    std::vector<int> vec = {1, 2, 3};
-    has_size_method(&vec);  // Object has size() method. Size: 3
-
-    int x = 5;
-    has_size_method(&x);    // Object does not have size() method.
-
-    return 0;
-}
-```
-
 ### 2. Lambdas in Unevaluated Contexts
 
 C++20 allows lambdas to appear in unevaluated contexts, such as the `sizeof` operator, `decltype` specifier, or `noexcept` operator. This feature enables you to work with lambda types without actually invoking the lambda.
