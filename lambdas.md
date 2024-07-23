@@ -276,155 +276,91 @@ struct S {
 };
 ```
 
+In C++17:
+- Capturing `=` would capture all local variables by value.
+- Capturing `this` would capture the current object pointer.
+- There was no way to capture `*this` (the entire object) by value.
+
+In C++20:
+- Capturing `=` captures all local variables by value, including `*this` if used inside a member function.
+- Capturing `this` now captures `*this` by reference (equivalent to `*this` capture in C++17).
+- A new `*this` capture was introduced to capture the entire object by value.
+
 #### Practical Use Cases:
-
-1. **Capturing class members in asynchronous operations:**
-
-```cpp
-#include <iostream>
-#include <future>
-#include <thread>
-#include <chrono>
-
-class AsyncProcessor {
-private:
-    int data = 0;
-
-public:
-    void process_async() {
-        auto future = std::async(std::launch::async, [=, this]() {
-            std::this_thread::sleep_for(std::chrono::seconds(2));
-            data *= 2;
-            std::cout << "Processed data: " << data << std::endl;
-        });
-
-        std::cout << "Processing started asynchronously..." << std::endl;
-        future.wait();
-    }
-
-    void set_data(int value) {
-        data = value;
-    }
-
-    int get_data() const {
-        return data;
-    }
-};
-
-int main() {
-    AsyncProcessor processor;
-    processor.set_data(21);
-    processor.process_async();
-    std::cout << "Final data: " << processor.get_data() << std::endl;
-
-    return 0;
-}
-```
-
-2. **Event handlers with object lifetime management:**
+Here's an example to demonstrate these differences:
 
 ```cpp
 #include <iostream>
-#include <functional>
-#include <vector>
-#include <memory>
 
-class Button {
-public:
-    using ClickHandler = std::function<void()>;
-
-    void set_on_click(ClickHandler handler) {
-        on_click = std::move(handler);
-    }
-
-    void click() {
-        if (on_click) {
-            on_click();
-        }
-    }
-
+class Example {
 private:
-    ClickHandler on_click;
-};
-
-class UI {
-public:
-    UI() : count(0) {
-        button = std::make_unique<Button>();
-        button->set_on_click([=, this]() {
-            ++count;
-            std::cout << "Button clicked " << count << " times!" << std::endl;
-        });
-    }
-
-    void simulate_clicks(int n) {
-        for (int i = 0; i < n; ++i) {
-            button->click();
-        }
-    }
-
-private:
-    std::unique_ptr<Button> button;
-    int count;
-};
-
-int main() {
-    UI ui;
-    ui.simulate_clicks(5);
-
-    return 0;
-}
-```
-
-3. **Memoization with class state:**
-
-```cpp
-#include <iostream>
-#include <unordered_map>
-#include <functional>
-
-class Memoizer {
-private:
-    std::unordered_map<int, int> cache;
+    int value;
 
 public:
-    std::function<int(int)> memoize(std::function<int(int)> func) {
-        return [=, this](int arg) mutable {
-            if (cache.find(arg) == cache.end()) {
-                cache[arg] = func(arg);
-            }
-            return cache[arg];
+    Example(int v) : value(v) {}
+
+    void demonstrate() {
+        // C++17 style
+        auto lambda17 = [=]() {
+            std::cout << "C++17 lambda: " << value << std::endl;
         };
-    }
 
-    void clear_cache() {
-        cache.clear();
-    }
+        // C++20 style
+        auto lambda20 = [=]() {
+            std::cout << "C++20 lambda: " << value << std::endl;
+        };
 
-    size_t cache_size() const {
-        return cache.size();
+        auto lambda20_this = [this]() {
+            std::cout << "C++20 lambda with 'this': " << value << std::endl;
+        };
+
+        auto lambda20_star_this = [*this]() {
+            std::cout << "C++20 lambda with '*this': " << value << std::endl;
+        };
+
+        value = 42;
+
+        lambda17();
+        lambda20();
+        lambda20_this();
+        lambda20_star_this();
     }
 };
 
-int fibonacci(int n) {
-    if (n <= 1) return n;
-    return fibonacci(n - 1) + fibonacci(n - 2);
-}
-
 int main() {
-    Memoizer memo;
-    auto memoized_fib = memo.memoize(fibonacci);
-
-    std::cout << "Fibonacci(10): " << memoized_fib(10) << std::endl;
-    std::cout << "Fibonacci(20): " << memoized_fib(20) << std::endl;
-    std::cout << "Cache size: " << memo.cache_size() << std::endl;
-
-    memo.clear_cache();
-    std::cout << "Cache cleared. New size: " << memo.cache_size() << std::endl;
-
+    Example ex(10);
+    ex.demonstrate();
     return 0;
 }
 ```
+
+Let's break down what happens in each case:
+
+1. `lambda17`: In C++17, this captures `this` by value, allowing access to `value` through the implicit `this->value`.
+
+2. `lambda20`: In C++20, this captures `*this` by value, making a copy of the entire object.
+
+3. `lambda20_this`: This captures `*this` by reference, similar to how `this` was captured in C++17.
+
+4. `lambda20_star_this`: This explicitly captures `*this` by value, making a copy of the entire object.
+
+When we run this code, the output will be:
+
+```
+C++17 lambda: 42
+C++20 lambda: 10
+C++20 lambda with 'this': 42
+C++20 lambda with '*this': 10
+```
+
+The key differences:
+
+- The C++17 lambda sees the updated value (42) because it captured `this` and accesses the original object's data.
+- The C++20 lambda with `[=]` captures a copy of the entire object, so it retains the original value (10).
+- The C++20 lambda with `[this]` behaves like the C++17 lambda, seeing the updated value (42).
+- The C++20 lambda with `[*this]` explicitly captures a copy of the object, retaining the original value (10).
+
+These changes in C++20 provide more clarity and control over how object data is captured in lambdas, especially when dealing with member functions.
 
 ### 5. Lambdas in Constexpr Contexts
 
