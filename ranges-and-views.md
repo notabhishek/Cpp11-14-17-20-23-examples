@@ -377,7 +377,8 @@ In this example, you'll see that the filtering and transforming messages are onl
 4. Use `std::views::common` when interfacing with legacy code expecting begin/end pairs.
 5. Be aware that some views may change the category of a range (e.g., from random-access to bidirectional).
 6. Const correctness with views (see previous section)
-
+7. <img width="627" alt="Screenshot 2024-07-23 at 14 32 14" src="https://github.com/user-attachments/assets/dbecf40e-f501-40c4-af4d-2a116f9bbb9f">
+8. <img width="616" alt="Screenshot 2024-07-23 at 14 32 24" src="https://github.com/user-attachments/assets/27358e1f-c4c3-4d9a-8e02-afae2cb4b682">
 
 ```cpp
 #include <ranges>
