@@ -300,30 +300,32 @@ public:
     Example(int v) : value(v) {}
 
     void demonstrate() {
-        // C++17 style
-        auto lambda17 = [=]() {
-            std::cout << "C++17 lambda: " << value << std::endl;
+        // C++17 style (now deprecated in C++20)
+        int x = 5; 
+        auto lambda17 = [=]() {  // Warning in C++20
+            std::cout << "C++17 lambda: " << value << " x=" << x <<  std::endl;
         };
 
-        // C++20 style
-        auto lambda20 = [=]() {
-            std::cout << "C++20 lambda: " << value << std::endl;
+        // Correct C++20 style
+        auto lambda20 = [=, this]() {  // Explicitly capture this
+            std::cout << "C++20 lambda: " << value << " x=" << x << std::endl;
         };
 
-        auto lambda20_this = [this]() {
+        auto lambda20_ref = [this]() {
             std::cout << "C++20 lambda with 'this': " << value << std::endl;
         };
 
-        auto lambda20_star_this = [*this]() {
+        auto lambda20_copy = [*this]() {
             std::cout << "C++20 lambda with '*this': " << value << std::endl;
         };
-
+		
+        x = 10;
         value = 42;
 
-        lambda17();
+        lambda17();  // Not recommended in C++20
         lambda20();
-        lambda20_this();
-        lambda20_star_this();
+        lambda20_ref();
+        lambda20_copy();
     }
 };
 
