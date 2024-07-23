@@ -99,6 +99,9 @@ auto joined = nested | std::views::join;
 // joined: {1, 2, 3, 4, 5, 6}
 ```
 
+#### Standard range adaptors in cpp20 
+https://learn.microsoft.com/en-us/cpp/standard-library/range-adaptors?view=msvc-170
+
 ### 2.2 View Composition
 
 Views can be easily composed using the pipe operator (`|`):
@@ -110,6 +113,14 @@ auto result = vec
     | std::views::take(2);
 // result: {4, 16}
 ```
+#### C++17 vs C++20 example
+Lets say we wanted to read a multiline string, and do the following 
+- Trim spaces
+- Remove empty lines
+- Get word counts
+
+Example c++17 implementation: https://godbolt.org/z/vhcssbsr7
+Example c++20 implementation: https://godbolt.org/z/GTWh5MYcz
 
 ## 3. Lazy Evaluation
 
@@ -217,6 +228,141 @@ int main() {
 }
 ```
 
+### Const-Correctness Issues with Views
+
+Some views in C++20 cannot be passed as const references due to their internal implementation. This can lead to unexpected behavior and compilation errors.
+
+#### Example of the Problem
+
+```cpp
+#include <ranges>
+#include <vector>
+
+void process(const auto& view) {
+    for (const auto& item : view) {
+        // Process item
+    }
+}
+
+int main() {
+    std::vector<int> numbers = {1, 2, 3, 4, 5};
+    auto filtered = numbers | std::views::filter([](int n) { return n % 2 == 0; });
+    
+    process(filtered); // This will not compile
+}
+```
+
+The above code will not compile because `std::views::filter` returns a view that cannot be used as a const reference.
+
+#### Explanation
+
+The issue arises because some view adaptors, like `filter` and `transform`, store their state in mutable members. This is necessary for lazy evaluation and to maintain the non-owning, lightweight nature of views.
+
+When you call `begin()` on such a view, it may need to update its internal state (e.g., to find the first element that satisfies the filter). If the view were const, this state update would not be possible.
+
+#### Workarounds
+
+1. Pass views by value instead of const reference:
+
+```cpp
+void process(auto view) {
+    for (const auto& item : view) {
+        // Process item
+    }
+}
+```
+
+2. Use `std::ranges::ref_view` to wrap the original range:
+
+```cpp
+void process(const auto& view) {
+    for (const auto& item : view) {
+        // Process item
+    }
+}
+
+int main() {
+    std::vector<int> numbers = {1, 2, 3, 4, 5};
+    auto filtered = std::ranges::ref_view(numbers) 
+        | std::views::filter([](int n) { return n % 2 == 0; });
+    
+    process(filtered); // This will compile
+}
+```
+
+### Design Changes: Begin Caching
+
+To address performance concerns and maintain the lazy evaluation property of views, C++20 introduced the concept of "begin caching" for certain view adaptors.
+
+#### What is Begin Caching?
+
+Begin caching is a technique where a view stores (caches) the result of the first call to `begin()`. This cached iterator is then returned on subsequent calls to `begin()`, avoiding redundant computation.
+
+#### Why is it Necessary?
+
+Consider a chain of view adaptors:
+
+```cpp
+auto view = numbers 
+    | std::views::filter([](int n) { return n % 2 == 0; })
+    | std::views::transform([](int n) { return n * n; });
+```
+
+Without begin caching, each call to `begin()` would have to traverse the entire chain of adaptors, potentially performing expensive operations multiple times.
+
+#### How it Works
+
+1. The first time `begin()` is called on a view with begin caching:
+   - The view performs necessary computations to find the first element.
+   - It stores the resulting iterator.
+
+2. On subsequent calls to `begin()`:
+   - The view returns the stored iterator.
+
+#### Example of Begin Caching
+
+```cpp
+#include <ranges>
+#include <vector>
+#include <iostream>
+
+int main() {
+    std::vector<int> numbers = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    
+    auto view = numbers 
+        | std::views::filter([](int n) { 
+            std::cout << "Filtering " << n << std::endl;
+            return n % 2 == 0; 
+          })
+        | std::views::transform([](int n) { 
+            std::cout << "Transforming " << n << std::endl;
+            return n * n; 
+          });
+    
+    // First call to begin() - will print filtering and transforming messages
+    auto it = std::ranges::begin(view);
+    std::cout << *it << std::endl;
+    
+    // Second call to begin() - will not print messages, uses cached iterator
+    it = std::ranges::begin(view);
+    std::cout << *it << std::endl;
+}
+```
+
+In this example, you'll see that the filtering and transforming messages are only printed once, even though we call `begin()` twice.
+
+#### Implications of Begin Caching
+
+1. **Performance Improvement**: Avoid redundant computations on repeated traversals.
+2. **Consistency**: Ensures that multiple traversals of the same view yield consistent results.
+3. **Complexity**: Adds some implementation complexity to view adaptors.
+
+### Design Considerations
+
+1. **Trade-offs**: Begin caching improves performance but increases memory usage slightly.
+2. **Invalidation**: Modifying the underlying range can invalidate the cached begin iterator.
+3. **Non-const Views**: The need for begin caching is one reason why some views can't be const.
+
 ## 8. Best Practices and Pitfalls
 
 1. Use ranges to simplify complex algorithms and improve readability.
@@ -224,6 +370,7 @@ int main() {
 3. Remember that views are lazy; they don't perform any work until iterated.
 4. Use `std::views::common` when interfacing with legacy code expecting begin/end pairs.
 5. Be aware that some views may change the category of a range (e.g., from random-access to bidirectional).
+6. Const correctness with views (see previous section)
 
 
 ```cpp
@@ -255,6 +402,7 @@ int main() {
     std::cout << "Sum of even numbers: " << legacy_sum(filtered.begin(), filtered.end()) << '\n';
 }
 ```
+
 
 
 # C++23 Views and Ranges Improvements
