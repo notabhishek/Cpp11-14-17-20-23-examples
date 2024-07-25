@@ -158,13 +158,31 @@ auto first_10 = integers | std::views::take(10);
 C++20 introduces the concept of sentinels, which are a generalization of the idea of the "end" of a range. This allows for more efficient range operations in some cases:
 
 ```cpp
-const char* find_null(const char* p) {
-    while (*p) ++p;
-    return p;
+#include <iostream>
+#include <ranges>
+
+struct EndSentinel {};
+
+// Custom range with a raw pointer and a sentinel
+auto my_range(const char* str) {
+    return std::ranges::subrange(str, EndSentinel{});
 }
 
-const char* str = "Hello, world!";
-auto char_range = std::ranges::subrange(str, find_null);
+bool operator!=(const char* ptr, EndSentinel) {
+    return *ptr != '\0';
+}
+
+int main() {
+    const char* str = "Hello, world!";
+    auto range = my_range(str);
+
+    for (const auto* it = range.begin(); it != range.end(); ++it) {
+        std::cout << *it;
+    }
+    std::cout << '\n';
+
+    return 0;
+}
 ```
 
 ## 6. Projections
