@@ -128,19 +128,41 @@ Example c++20 implementation: https://godbolt.org/z/GTWh5MYcz
 Views are lazily evaluated, meaning that operations are only performed when the elements are actually accessed:
 
 ```cpp
-std::vector<int> vec{1, 2, 3, 4, 5};
-auto view = vec 
-    | std::views::filter([](int n) { std::cout << "Filtering " << n << "\n"; return n % 2 == 0; })
-    | std::views::transform([](int n) { std::cout << "Transforming " << n << "\n"; return n * n; });
+#include <ranges>
+#include <vector>
+#include <iostream>
 
-// No output yet, as no elements have been accessed
+int main() {
+    std::vector<int> numbers = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    
+    auto view = numbers 
+        | std::views::filter([](int n) { 
+            std::cout << "Filtering " << n << std::endl;
+            return n % 2 == 0; 
+          })
+        | std::views::transform([](int n) { 
+            std::cout << "Transforming " << n << std::endl;
+            return n * n; 
+          });
+    
+    // First call to begin() - will print filtering and transforming messages
+    // auto it = std::ranges::begin(view);
+    // std::cout << *it << std::endl;
+    
+    // // Second call to begin() - will not print messages, uses cached iterator
+    // it = std::ranges::begin(view);
+    // std::cout << *it << std::endl;
 
-std::cout << "First element: " << *view.begin() << "\n";
-// Output:
-// Filtering 1
-// Filtering 2
-// Transforming 2
-// First element: 4
+    auto it2 = view.begin();
+    std::cout << *it2 << "\n";
+
+    ++it2;
+    std::cout << *it2 << "\n";
+
+    ++it2;
+    std::cout << *it2 << "\n";
+
+}
 ```
 
 ## 4. Infinite Ranges
