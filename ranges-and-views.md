@@ -159,29 +159,38 @@ C++20 introduces the concept of sentinels, which are a generalization of the ide
 
 ```cpp
 #include <iostream>
-#include <ranges>
+#include <string>
+#include <vector>
+#include <algorithm>
 
-struct EndSentinel {};
-
-// Custom range with a raw pointer and a sentinel
-auto my_range(const char* str) {
-    return std::ranges::subrange(str, EndSentinel{});
+void print(const auto& coll)
+{
+  for (const auto& elem : coll) {
+    std::cout << elem << ' ';
+  }
+  std::cout << '\n';
 }
 
-bool operator!=(const char* ptr, EndSentinel) {
-    return *ptr != '\0';
-}
+template<typename ValT>
+struct EndValue {
+   ValT val;
+  public:
+   EndValue(ValT v = 0)   // default constructor required by concept
+    : val{v} {
+  }
+  bool operator==(auto pos) const {
+     return val == *pos;
+  }
+};
 
-int main() {
-    const char* str = "Hello, world!";
-    auto range = my_range(str);
+int main()
+{
+  std::vector<double> vd{1.1, 7.7, 3.3, -1.7, 0.0, 2.2, 3.3};
 
-    for (const auto* it = range.begin(); it != range.end(); ++it) {
-        std::cout << *it;
-    }
-    std::cout << '\n';
+  static_assert(std::totally_ordered<decltype(vd)>);
 
-    return 0;
+  std::ranges::sort(vd.begin(), EndValue{0.0});
+  print(vd);
 }
 ```
 
