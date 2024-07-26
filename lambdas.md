@@ -204,10 +204,11 @@ lambda2 = lambda1;
 ```cpp
 #include <iostream>
 #include <map>
+#include <functional>
 #include <string>
 
 int main() {
-    std::map<std::string, decltype([](int x) { return x * x; })> function_map;
+    std::map<std::string, std::function<int(int)>> function_map;
 
     function_map["square"] = [](int x) { return x * x; };
     function_map["cube"] = [](int x) { return x * x * x; };
