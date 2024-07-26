@@ -201,23 +201,50 @@ lambda2 = lambda1;
 
 1. **Using lambdas with standard containers:**
 
+https://godbolt.org/z/vMdda3j1W
 ```cpp
 #include <iostream>
 #include <map>
-#include <functional>
 #include <string>
+#include <functional>
+
+//  Wrapper class for lambda
+class LambdaWrapper {
+public:
+    using FuncType = std::function<int(int)>;
+
+    LambdaWrapper() : func_(defaultFunc) {}
+
+    LambdaWrapper(FuncType func) : func_(func) {}
+
+    int operator()(int x) const {
+        return func_(x);
+    }
+
+private:
+    static int defaultFunc(int x) {
+        return x; // Default function
+    }
+
+    FuncType func_;
+};
 
 int main() {
-    std::map<std::string, std::function<int(int)>> function_map;
+    // LambdaWrapper as the value type (can be default constructed, constructed with a lambda)
+    std::map<std::string, LambdaWrapper> function_map;
 
-    function_map["square"] = [](int x) { return x * x; };
-    function_map["cube"] = [](int x) { return x * x * x; };
-    function_map["double"] = [](int x) { return x * 2; };
+    // Initialize map with specific lambdas
+    function_map.emplace("square",[](int x) { return x * x; });
+    function_map.emplace("cube", [](int x) { return x * x * x; });
+    function_map.emplace("double", [](int x) { return x * 2; });
 
     int value = 5;
     for (const auto& [name, func] : function_map) {
         std::cout << name << " of " << value << ": " << func(value) << "\n";
     }
+
+    // Testing default function for a non-existent key
+    std::cout << "undefined operation on " << value << ": " << function_map["undefined"](value) << "\n";
 
     return 0;
 }
