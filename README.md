@@ -1,8 +1,22 @@
-# Cpp20
-C++20 overview
+# C++20 Features
 - [Overview of changes](./cpp20/overview.md)
 - [Comparisons and the <=>](./cpp20/comparisons%20and%20spaceship.md)
 - [Concepts, Constraints and Requirements](./cpp20/concepts.md)
 - [Ranges and Views](./cpp20/ranges-and-views.md)
 - [Span](./cpp20/spans.md)
 - [Lambdas](./cpp20/lambdas.md)
+
+# C++17 Features
+- [Structured Bindings](cpp17/structured_bindings.cpp)
+- [If with Initializer](cpp17/if_init.cpp)
+- [Fold Expressions](cpp17/fold_expressions.cpp)
+- [Constexpr If](cpp17/constexpr_if.cpp)
+- [Inline Variables](cpp17/inline_variables.cpp)
+- [Nested Namespaces](cpp17/nested_namespaces.cpp)
+- [Template Argument Deduction](cpp17/template_argument_deduction.cpp)
+- [std::optional](cpp17/optional.cpp)
+- [std::variant](cpp17/variant.cpp)
+- [std::any](cpp17/any.cpp)
+- [std::string_view](cpp17/string_view.cpp)
+- [Filesystem Library](cpp17/filesystem.cpp)
+- [Parallel Algorithms](cpp17/parallel_algorithms.cpp)
