@@ -20,3 +20,13 @@
 - [std::string_view](cpp17/string_view.cpp)
 - [Filesystem Library](cpp17/filesystem.cpp)
 - [Parallel Algorithms](cpp17/parallel_algorithms.cpp)
+
+# C++14 Features
+- [Generic Lambdas](cpp14/generic_lambdas.cpp)
+- [Lambda Capture Expressions](cpp14/lambda_capture_expressions.cpp)
+- [Return Type Deduction](cpp14/return_type_deduction.cpp)
+- [Constexpr Improvements](cpp14/constexpr_improvements.cpp)
+- [Variable Templates](cpp14/variable_templates.cpp)
+- [Binary Literals](cpp14/binary_literals.cpp)
+- [Digit Separators](cpp14/digit_separators.cpp)
+- [Shared Mutex](cpp14/shared_mutex.cpp)
