@@ -1,6 +1,6 @@
 #include <iostream>
 #include <generator>
-
+#include <ranges>
 std::generator<int> fibonacci() {
     int a = 0, b = 1;
     while (true) {
@@ -13,11 +13,13 @@ std::generator<int> fibonacci() {
 
 int main() {
     auto fib = fibonacci();
-    for (int i = 0; i < 10; ++i) {
-        std::cout << fib() << " ";
+    for (size_t idx = 10; int i : fib) {
+        std::cout << i << " ";
+        if(--idx <= 0) {
+            break;
+        }
     }
     std::cout << std::endl;
     return 0;
 }
-
 
